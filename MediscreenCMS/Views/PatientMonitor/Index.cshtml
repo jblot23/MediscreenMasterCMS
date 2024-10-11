@@ -1,0 +1,182 @@
+﻿@model List<MedisrceenCMS.Models.MongoDb.Models.Patient>
+
+@{
+    ViewData["Title"] = "Patients List";
+}
+
+<h2>Patients List</h2>
+<a asp-action="CreatePatient" asp-controller="PatientMonitor">
+    Create
+</a>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Full Name</th>
+            <th>Date Of Birth</th>
+            <th>Gender</th>
+            <th>Phone Number</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.FirstName</td>
+                <td>@item.DateOFBirth</td>
+                <td>@item.Gender</td>
+                <td>@item.PhoneNumber</td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info">Details</a>
+                    <a asp-action="UpdatePatient" asp-route-id="@item.Id" class="btn btn-warning">Edit</a>
+                    <button class="btn btn-primary" onclick="openDoctorNoteModal('@item.Id')">Create Doctor Note</button>
+                    <button class="btn btn-secondary" onclick="listPatientNotes('@item.Id')">List Doctor Notes</button>
+                    <button class="btn btn-danger" onclick="generateDiabeticAssessment('@item.Id')">Generate Diabetic Assessment</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- Doctor Note Modal -->
+<div class="modal fade" id="doctorNoteModal" tabindex="-1" role="dialog" aria-labelledby="doctorNoteModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="doctorNoteModalLabel">Create Doctor Note</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="doctorNoteForm">
+                    <div class="form-group">
+                        <label for="doctorNoteText">Doctor Note</label>
+                        <textarea class="form-control" id="doctorNoteText" rows="3" required></textarea>
+                    </div>
+                    <input type="hidden" id="patientId">
+                    <button type="button" class="btn btn-primary" onclick="saveDoctorNote()">Save Note</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="doctorNoteListModal" tabindex="-1" role="dialog" aria-labelledby="doctorNoteListModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="doctorNoteListModalLabel">Doctor Notes</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <ul id="doctorNotesList" class="list-group">
+                    <!-- Notes will be loaded here -->
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Diabetic Assessment Modal -->
+<div class="modal fade" id="diabeticAssessmentModal" tabindex="-1" role="dialog" aria-labelledby="diabeticAssessmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="diabeticAssessmentModalLabel">Diabetic Assessment Result</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="diabeticAssessmentResult"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script type="text/javascript">
+    function openDoctorNoteModal(patientId) {
+        // Set the hidden input field with the patient ID
+        $('#patientId').val(patientId);
+        // Open the modal
+        $('#doctorNoteModal').modal('show');
+    }
+
+    function saveDoctorNote() {
+        // Get the patient ID and note content
+        var patientId = $('#patientId').val();
+        var doctorNote = $('#doctorNoteText').val();
+
+        // Simple validation
+        if (!doctorNote) {
+            alert("Please enter a note");
+            return;
+        }
+
+        // Perform an AJAX call to create the doctor note
+        $.ajax({
+            url: '@Url.Action("CreateDoctorNote", "PatientMonitor")',
+            type: 'POST',
+            data: {
+                patientId: patientId,
+                note: doctorNote
+            },
+            success: function (response) {
+                $('#doctorNoteModal').modal('hide');
+            },
+            error: function () {
+                alert("An error occurred.");
+            }
+        });
+    }
+
+    function listPatientNotes(patientId) {
+        // Clear any previous notes
+        $('#doctorNotesList').empty();
+
+        // Make AJAX call to fetch doctor notes for the patient
+        $.ajax({
+            url: '@Url.Action("ListDoctorNote", "PatientMonitor")',
+            type: 'POST',
+            data: { patientId: patientId },
+            success: function (response) {
+                console.log(response)
+                if (response) {
+                    // Loop through the notes and append them to the list
+                    response.forEach(function (note) {
+                        $('#doctorNotesList').append('<li class="list-group-item">' + note.doctorNote + '</li>');
+                    });
+                    // Show the modal
+                    $('#doctorNoteListModal').modal('show');
+                } else {
+                    alert("Failed to retrieve doctor notes.");
+                }
+            },
+            error: function () {
+                alert("An error occurred while fetching doctor notes.");
+            }
+        });
+    }
+
+    function generateDiabeticAssessment(patientId) {
+        // Make AJAX call to fetch diabetic assessment for the patient
+        $.ajax({
+            url: '@Url.Action("GetPatientRiskLevel", "PatientMonitor")',
+            type: 'POST',
+            data: { patientId: patientId },
+            success: function (response) {
+                $('#diabeticAssessmentResult').text(response);
+                $('#diabeticAssessmentModal').modal('show');
+            },
+            error: function () {
+                alert("An error occurred while generating diabetic assessment.");
+            }
+        });
+    }
+</script>

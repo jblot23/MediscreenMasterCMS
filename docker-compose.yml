@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=${SA_PASSWORD}  
+    ports:
+      - "1433:1433"
+    networks:
+      - app-network
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    networks:
+      - app-network
+    volumes:
+      - mongo-data:/data/db
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mediscreencms
+    ports:
+      - "8080:8080"
+    depends_on:
+      - sqlserver
+      - mongodb
+    environment:
+      - ConnectionStrings__SqlServer=${SQLSERVER_CONNECTION}  
+      - ConnectionStrings__MongoDB=${MONGO_URL}  
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}  
+
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
