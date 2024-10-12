@@ -65,15 +65,11 @@ namespace MediscreenCMS.Controllers
 
         [HttpPost]
         public async Task<IActionResult> UpdatePatient(string id, Patient patient, string note)
-        { 
+        {
 
-            if (ModelState.IsValid)
-            {
-                await _patientService.UpdateAsync(id, patient);
-                return RedirectToAction("Index");
-            }
-
-            return View(patient);
+            await _patientService.UpdateAsync(id, patient);
+            return RedirectToAction("Index");
+             
         }  
         
         [HttpPost]
@@ -177,6 +173,7 @@ namespace MediscreenCMS.Controllers
 
             return "Patient has no issue";
         }
+
 
     }
 }

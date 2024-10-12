@@ -35,6 +35,36 @@ namespace MediscreenCMS.Controllers
 
             return Ok();
         }
+        [Route("doctorNote/edit")]
+        [HttpPut]
+        public async Task<IActionResult> EditDoctorNote(string noteId, [FromBody] string updatedNote)
+        {
+            try
+            {
+                // Find the doctor note by ID
+                var doctorNote = await _doctorNotesServices.GetAsync(noteId);
+
+                if (doctorNote == null)
+                {
+                    return NotFound(new { message = "Doctor note not found" });
+                }
+
+                // Update the note content
+                doctorNote.DoctorNote = updatedNote;
+
+                // Save the updated note
+                await _doctorNotesServices.UpdateAsync(noteId, doctorNote);
+
+                return Ok(new { message = "Doctor note updated successfully" });
+            }
+            catch (Exception ex)
+            {
+                // Log the error and return a server error response
+                _logger.LogError(ex, "Error updating doctor note");
+                return StatusCode(500, new { message = "An error occurred while updating the doctor note" });
+            }
+        }
+
 
         [Route("patientRiskLevel/get")]
         public async Task<string> GetPatientRiskLevel(string patientId)
@@ -50,8 +80,8 @@ namespace MediscreenCMS.Controllers
                 "Smoker",
                 "Abnormal",
                 "Cholesterol",
-                "Dizziness",
                 "Relapse",
+                "Dizziness",
                 "Reaction",
                 "Antibodies"
             };
